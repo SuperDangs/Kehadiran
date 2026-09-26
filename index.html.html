@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Clock In Pekerja</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif; }
+  :root {
+    --primary:#6366f1; --primary-dark:#4f46e5;
+    --success:#10b981; --danger:#ef4444; --warning:#f59e0b;
+    --bg:#0f172a; --card:#1e293b; --card-2:#0f172a;
+    --text:#f1f5f9; --text-light:#94a3b8; --border:#334155;
+  }
+  body {
+    background: var(--bg);
+    min-height: 100vh; color: var(--text);
+    padding: 20px; font-size: 14px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  .app-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px;
+  }
+  .app-header .left { display: flex; align-items: center; gap: 14px; }
+  .app-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+  }
+  .app-header h1 { font-size: 20px; font-weight: 700; }
+  .app-header .status { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+  .icon-btn {
+    width: 44px; height: 44px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text);
+    font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { background: var(--border); }
+  .card {
+    background: var(--card);
+    padding: 24px; border-radius: 16px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+  }
+  .setup-note {
+    color: var(--text-light); font-size: 13px;
+    margin-bottom: 16px; line-height: 1.6;
+    word-break: break-all;
+  }
+  .setup-note code {
+    background: var(--bg); padding: 2px 6px; border-radius: 4px;
+    font-size: 12px; color: var(--primary);
+  }
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block; font-size: 12px; font-weight: 600;
+    margin-bottom: 8px; color: var(--text-light);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 14px 16px;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px; font-size: 14px;
+    color: var(--text); outline: none;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  }
+  .form-group input::placeholder, .form-group textarea::placeholder {
+    color: #64748b;
+  }
+  .input-row { display: flex; gap: 10px; }
+  .input-row input { flex: 1; }
+  .btn-save {
+    padding: 14px 24px; border: none; border-radius: 10px;
+    background: var(--primary); color: white;
+    font-weight: 600; font-size: 14px; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-save:hover { background: var(--primary-dark); }
+  .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn {
+    width: 100%; padding: 14px; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; color: white; background: var(--primary);
+  }
+  .btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-danger { background: var(--danger); }
+  .btn-success { background: var(--success); }
+  .btn-small {
+    padding: 8px 14px; font-size: 12px; width: auto;
+    border-radius: 8px; font-weight: 600; cursor: pointer;
+    border: none; color: white; transition: all 0.2s;
+  }
+  .btn-approve { background: var(--success); }
+  .btn-approve:hover { background: #059669; }
+  .btn-reject { background: var(--danger); }
+  .btn-reject:hover { background: #dc2626; }
+  .btn-link {
+    background: none; border: none; color: var(--primary);
+    font-weight: 600; cursor: pointer; font-size: 14px;
+    padding: 0; margin-top: 16px; width: 100%; text-align: center;
+  }
+  .btn-link:hover { text-decoration: underline; }
+  .error-msg {
+    background: rgba(239,68,68,0.15); color: #fca5a5;
+    padding: 12px 16px; border-radius: 10px;
+    font-size: 13px; margin-bottom: 16px;
+    border: 1px solid rgba(239,68,68,0.3);
+    display: none;
+  }
+  .success-msg {
+    background: rgba(16,185,129,0.15); color: #6ee7b7;
+    padding: 12px 16px; border-radius: 10px;
+    font-size: 13px; margin-bottom: 16px;
+    border: 1px solid rgba(16,185,129,0.3);
+    display: none;
+  }
+  .hidden { display: none !important; }
+  .clock-display { text-align: center; padding: 20px 0; }
+  .clock-display .time {
+    font-size: 56px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .clock-display .date {
+    font-size: 14px; color: var(--text-light); margin-top: 6px;
+  }
+  .status-box {
+    margin-top: 20px; padding: 16px; border-radius: 12px;
+    text-align: center; font-size: 14px;
+  }
+  .status-box.info { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+  .status-box.success { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+  .status-box.danger { background: rgba(239,68,68,0.15); color: #fca5a5; }
+  .status-box.warning { background: rgba(245,158,11,0.15); color: #fcd34d; }
+  .action-buttons { display: flex; gap: 12px; margin-top: 20px; }
+  .schedule-info {
+    background: var(--card-2); padding: 16px; border-radius: 10px;
+    font-size: 13px; color: var(--text-light); line-height: 1.9;
+    border: 1px solid var(--border);
+  }
+  .schedule-info strong { color: var(--text); }
+  .tabs {
+    display: flex; gap: 6px; margin-bottom: 20px;
+    background: var(--card); padding: 6px;
+    border-radius: 12px; border: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tab {
+    flex: 1; padding: 10px; border: none; background: transparent;
+    border-radius: 8px; cursor: pointer; font-weight: 600;
+    font-size: 13px; color: var(--text-light); transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab.active { background: var(--primary); color: white; }
+  .tab.admin-tab { background: linear-gradient(135deg, #f59e0b, #f97316); color: white; }
+  .tab.admin-tab.active { box-shadow: 0 0 0 2px #fbbf24; }
+  .sub-tabs {
+    display: flex; gap: 6px; margin-bottom: 16px;
+    background: var(--card-2); padding: 4px;
+    border-radius: 10px; border: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .sub-tab {
+    flex: 1; padding: 8px; border: none; background: transparent;
+    border-radius: 6px; cursor: pointer; font-weight: 600;
+    font-size: 12px; color: var(--text-light); transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .sub-tab.active { background: var(--card); color: var(--text); }
+  .history-list { max-height: 500px; overflow-y: auto; }
+  .history-item {
+    padding: 14px; border-radius: 10px;
+    background: var(--card-2);
+    margin-bottom: 8px; font-size: 13px;
+    display: flex; justify-content: space-between; align-items: center;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--success);
+    gap: 10px;
+  }
+  .history-item.late { border-left-color: var(--danger); }
+  .history-item .date-info { font-weight: 600; color: var(--text); }
+  .history-item .time-info { color: var(--text-light); font-size: 12px; margin-top: 3px; }
+  .badge {
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge.on-time { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+  .badge.late { background: rgba(239,68,68,0.2); color: #fca5a5; }
+  .badge.leave { background: rgba(245,158,11,0.2); color: #fcd34d; }
+  .badge.sick { background: rgba(59,130,246,0.2); color: #93c5fd; }
+  .badge.pending { background: rgba(245,158,11,0.2); color: #fcd34d; }
+  .badge.approved { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+  .badge.rejected { background: rgba(239,68,68,0.2); color: #fca5a5; }
+  .badge.admin { background: rgba(245,158,11,0.2); color: #fbbf24; }
+  .empty-state {
+    text-align: center; padding: 30px;
+    color: var(--text-light); font-size: 13px;
+  }
+  .toast {
+    position: fixed; top: 20px; right: 20px;
+    padding: 14px 20px; border-radius: 10px; color: white;
+    font-weight: 600; font-size: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transform: translateX(400px); transition: transform 0.3s;
+    z-index: 9999; max-width: 350px;
+  }
+  .toast.show { transform: translateX(0); }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  .toast.info { background: var(--primary); }
+  .user-chip {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--card-2); padding: 10px 14px;
+    border-radius: 10px; border: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .user-chip .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px;
+    flex-shrink: 0;
+  }
+  .user-chip .avatar.admin {
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+  }
+  .user-chip .name-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .user-chip .short-name {
+    font-weight: 600; color: var(--text);
+    text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .role-badge {
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .role-badge.admin {
+    background: #ffffff; color: #111827;
+    box-shadow: 0 0 8px rgba(255,255,255,0.3);
+  }
+  .role-badge.staff {
+    background: var(--success); color: white;
+  }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px; margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--card); padding: 18px;
+    border-radius: 14px; border: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat-card .num {
+    font-size: 28px; font-weight: 700;
+    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-card .num.success {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-card .num.danger {
+    background: linear-gradient(135deg, #ef4444, #f87171);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-card .num.warning {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-card .label {
+    font-size: 11px; color: var(--text-light);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--card-2); padding: 12px;
+    text-align: left; font-weight: 600;
+    font-size: 11px; color: var(--text-light);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 12px; border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(99,102,241,0.05); }
+  @media (max-width: 600px) {
+    .app-header h1 { font-size: 16px; }
+    .clock-display .time { font-size: 40px; }
+    .tab { font-size: 11px; padding: 8px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="app-header">
+    <div class="left">
+      <div class="app-icon">🕐</div>
+      <div>
+        <h1>Sistem Clock In</h1>
+        <div class="status" id="connStatus">Belum disambung ke Firebase</div>
+      </div>
+    </div>
+    <button class="icon-btn" id="settingsBtn" type="button" title="Tetapan">⚙️</button>
+  </div>
+
+  <div id="setupScreen">
+    <div class="card">
+      <div class="setup-note">
+        Tampal URL Firebase Realtime Database kamu. Contoh:<br>
+        <code>https://nama-projek-default-rtdb.asia-southeast1.firebasedatabase.app</code>
+      </div>
+      <div class="input-row">
+        <input type="text" id="firebaseUrl" placeholder="https://nama-projek-default-rtdb.firebasedatabase.app">
+        <button class="btn-save" id="saveUrlBtn" type="button">Simpan</button>
+      </div>
+      <div class="error-msg" id="setupError" style="margin-top:16px;"></div>
+      <div class="success-msg" id="setupSuccess" style="margin-top:16px;"></div>
+      <button class="btn-link" id="clearUrlBtn" type="button" style="margin-top:20px;">Padam URL & Reset</button>
+    </div>
+  </div>
+
+  <div id="loginScreen" class="hidden">
+    <div class="card">
+      <h2 style="font-size:18px; margin-bottom:6px;">Log Masuk</h2>
+      <p style="color:var(--text-light); font-size:13px; margin-bottom:24px;">Masuk ke sistem kehadiran</p>
+      <div class="error-msg" id="loginError"></div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="nama@company.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••">
+      </div>
+      <button class="btn" id="loginBtn" type="button">Log Masuk</button>
+      <button class="btn-link" id="goRegister" type="button">Belum ada akaun? Daftar di sini →</button>
+    </div>
+  </div>
+
+  <div id="registerScreen" class="hidden">
+    <div class="card">
+      <h2 style="font-size:18px; margin-bottom:6px;">Daftar Akaun</h2>
+      <p style="color:var(--text-light); font-size:13px; margin-bottom:24px;">Cipta akaun pekerja baru</p>
+      <div class="error-msg" id="registerError"></div>
+      <div class="form-group">
+        <label>Nama Penuh</label>
+        <input type="text" id="regName" placeholder="Ahmad bin Ali">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="regEmail" placeholder="nama@company.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="regPassword" placeholder="Minimum 6 aksara">
+      </div>
+      <div class="form-group">
+        <label>Sahkan Password</label>
+        <input type="password" id="regConfirm" placeholder="••••••••">
+      </div>
+      <button class="btn" id="registerBtn" type="button">Daftar</button>
+      <button class="btn-link" id="goLogin" type="button">Sudah ada akaun? Log masuk →</button>
+    </div>
+  </div>
+
+  <div id="dashboard" class="hidden">
+    <div class="tabs">
+      <button class="tab active" data-tab="clock" type="button">⏰ Clock In/Out</button>
+      <button class="tab" data-tab="history" type="button">📋 Sejarah</button>
+      <button class="tab" data-tab="leave" type="button">🏖️ Cuti</button>
+      <button class="tab admin-tab hidden" id="adminTab" data-tab="admin" type="button">👑 Admin</button>
+    </div>
+
+    <div id="tab-clock" class="tab-content">
+      <div class="card">
+        <div class="clock-display">
+          <div class="time" id="liveTime">00:00:00</div>
+          <div class="date" id="liveDate">-</div>
+        </div>
+        <div id="statusBox" class="status-box info">Tekan Clock In untuk mula</div>
+        <div class="action-buttons">
+          <button class="btn btn-success" id="clockInBtn" type="button">🟢 Clock In</button>
+          <button class="btn btn-danger" id="clockOutBtn" type="button" disabled>🔴 Clock Out</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:15px; margin-bottom:14px;">📅 Jadual Kerja</h3>
+        <div class="schedule-info">
+          <strong>Isnin - Jumaat:</strong> 09:30 - 19:00<br>
+          <strong>Sabtu:</strong> 09:30 - 18:00<br>
+          <strong>Ahad:</strong> Cuti<br>
+          <span style="color:#fca5a5;">⚠️ Lewat clock in ditanda merah</span><br>
+          <span style="color:#6ee7b7;">✓ Clock out awal dibenarkan</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div class="user-chip">
+            <div class="avatar" id="userAvatar">U</div>
+            <div>
+              <div class="name-row">
+                <span class="short-name" id="userName">Pekerja</span>
+                <span class="role-badge staff" id="userRoleBadge">Staff</span>
+              </div>
+              <div style="font-size:12px; color:var(--text-light);" id="userEmail">email</div>
+            </div>
+          </div>
+          <button class="btn-save" id="logoutBtn" type="button" style="background:transparent; border:1px solid var(--danger); color:#fca5a5;">Log Keluar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-history" class="tab-content hidden">
+      <div class="card">
+        <h3 style="font-size:15px; margin-bottom:14px;">📋 Sejarah Kehadiran</h3>
+        <div class="history-list" id="historyList">
+          <div class="empty-state">Memuatkan...</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-leave" class="tab-content hidden">
+      <div class="card">
+        <h3 style="font-size:15px; margin-bottom:14px;">🏖️ Mohon Cuti</h3>
+        <div class="form-group">
+          <label>Jenis Cuti</label>
+          <select id="leaveType">
+            <option value="annual">Cuti Tahunan</option>
+            <option value="sick">Cuti Sakit</option>
+            <option value="emergency">Cuti Kecemasan</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tarikh Mula</label>
+          <input type="date" id="leaveStart">
+        </div>
+        <div class="form-group">
+          <label>Tarikh Tamat</label>
+          <input type="date" id="leaveEnd">
+        </div>
+        <div class="form-group">
+          <label>Keterangan</label>
+          <textarea id="leaveReason" placeholder="Nyatakan sebab cuti..."></textarea>
+        </div>
+        <button class="btn" id="applyLeaveBtn" type="button">Hantar Permohonan</button>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:15px; margin-bottom:14px;">📌 Permohonan Saya</h3>
+        <div id="leaveList" class="history-list">
+          <div class="empty-state">Belum ada permohonan</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-admin" class="tab-content hidden">
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-subtab="dash" type="button">📊 Dashboard</button>
+        <button class="sub-tab" data-subtab="attendance" type="button">📋 Kehadiran</button>
+        <button class="sub-tab" data-subtab="leaves" type="button">🏖️ Cuti</button>
+        <button class="sub-tab" data-subtab="staff" type="button">👥 Staff</button>
+      </div>
+
+      <div id="subtab-dash" class="sub-content">
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <div class="num" id="statTotalStaff">0</div>
+            <div class="label">Jumlah Staff</div>
+          </div>
+          <div class="stat-card">
+            <div class="num success" id="statCheckedIn">0</div>
+            <div class="label">Dah Clock In</div>
+          </div>
+          <div class="stat-card">
+            <div class="num danger" id="statLate">0</div>
+            <div class="label">Lewat</div>
+          </div>
+          <div class="stat-card">
+            <div class="num warning" id="statNotIn">0</div>
+            <div class="label">Belum Clock In</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <h3 style="font-size:15px;">📅 Kehadiran Hari Ini</h3>
+            <button class="btn-small" id="refreshDashBtn" type="button" style="background:var(--primary);">🔄 Refresh</button>
+          </div>
+          <div class="history-list" id="todayList">
+            <div class="empty-state">Memuatkan...</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="subtab-attendance" class="sub-content hidden">
+        <div class="card">
+          <h3 style="font-size:15px; margin-bottom:14px;">📋 Semua Rekod Kehadiran</h3>
+          <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+            <input type="date" id="filterDate" style="flex:1; min-width:140px; padding:10px; background:var(--card-2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px;">
+            <button class="btn-small" id="filterBtn" type="button" style="background:var(--primary);">🔍 Filter</button>
+            <button class="btn-small" id="clearFilterBtn" type="button" style="background:var(--border);">✖ Reset</button>
+            <button class="btn-small" id="exportCsvBtn" type="button" style="background:var(--success);">📥 CSV</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tarikh</th>
+                  <th>Staff</th>
+                  <th>Clock In</th>
+                  <th>Clock Out</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceTable">
+                <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-light);">Memuatkan...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="subtab-leaves" class="sub-content hidden">
+        <div class="card">
+          <h3 style="font-size:15px; margin-bottom:14px;">🏖️ Permohonan Cuti Staff</h3>
+          <div class="history-list" id="adminLeaveList">
+            <div class="empty-state">Memuatkan...</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="subtab-staff" class="sub-content hidden">
+        <div class="card">
+          <h3 style="font-size:15px; margin-bottom:14px;">👥 Senarai Staff</h3>
+          <div class="history-list" id="staffList">
+            <div class="empty-state">Memuatkan...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const OFFICE_LOCATION = {
+  lat: 2.825659,
+  lng: 101.787168,
+  radiusMeters: 1000
+};
+
+let FB_URL = localStorage.getItem('fbUrl') || '';
+let currentUser = null;
+
+function showToast(msg, type = "info") {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove("show"), 3500);
+}
+
+function todayKey(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function fmtTime(date) {
+  return date.toLocaleTimeString('ms-MY', { hour:'2-digit', minute:'2-digit' });
+}
+function getSchedule(dayOfWeek) {
+  if (dayOfWeek === 0) return null;
+  if (dayOfWeek === 6) return { start: "09:30", end: "18:00" };
+  return { start: "09:30", end: "19:00" };
+}
+function timeToMinutes(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+function distanceMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000, toRad = (x) => x * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+async function hashPassword(pw) {
+  const enc = new TextEncoder().encode(pw);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function apiPath(path) {
+  const base = FB_URL.replace(/\/+$/, '');
+  return `${base}/${path}.json`;
+}
+async function fbGet(path) {
+  const res = await fetch(apiPath(path));
+  if (!res.ok) throw new Error(`GET ${path} gagal: ${res.status}`);
+  return await res.json();
+}
+async function fbPut(path, data) {
+  const res = await fetch(apiPath(path), {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(`PUT ${path} gagal: ${res.status}`);
+  return await res.json();
+}
+async function fbPost(path, data) {
+  const res = await fetch(apiPath(path), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(`POST ${path} gagal: ${res.status}`);
+  return await res.json();
+}
+async function fbPatch(path, data) {
+  const res = await fetch(apiPath(path), {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(`PATCH ${path} gagal: ${res.status}`);
+  return await res.json();
+}
+async function testConnection(url) {
+  try {
+    const clean = url.replace(/\/+$/, '');
+    const res = await fetch(`${clean}/.json?shallow=true`);
+    return res.ok;
+  } catch { return false; }
+}
+
+function updateConnStatus() {
+  const el = $("connStatus");
+  if (FB_URL) {
+    const short = FB_URL.replace('https://', '').split('.')[0];
+    el.textContent = `Bersambung: ${short}`;
+    el.style.color = '#6ee7b7';
+  } else {
+    el.textContent = 'Belum disambung ke Firebase';
+    el.style.color = '#94a3b8';
+  }
+}
+function showScreen(name) {
+  $("setupScreen").classList.add("hidden");
+  $("loginScreen").classList.add("hidden");
+  $("registerScreen").classList.add("hidden");
+  $("dashboard").classList.add("hidden");
+  if (name === "setup") $("setupScreen").classList.remove("hidden");
+  if (name === "login") $("loginScreen").classList.remove("hidden");
+  if (name === "register") $("registerScreen").classList.remove("hidden");
+  if (name === "dashboard") $("dashboard").classList.remove("hidden");
+}
+function route() {
+  updateConnStatus();
+  if (!FB_URL) { showScreen("setup"); return; }
+  const session = JSON.parse(localStorage.getItem('session') || 'null');
+  if (session) {
+    currentUser = session;
+    showScreen("dashboard");
+    enterDashboard();
+  } else {
+    showScreen("login");
+  }
+}
+
+$("saveUrlBtn").addEventListener("click", async () => {
+  const url = $("firebaseUrl").value.trim();
+  const errBox = $("setupError");
+  const okBox = $("setupSuccess");
+  errBox.style.display = "none"; okBox.style.display = "none";
+
+  if (!url) { errBox.textContent = "Sila masukkan URL Firebase"; errBox.style.display="block"; return; }
+  if (!url.startsWith("https://") || !url.includes("firebasedatabase.app")) {
+    errBox.textContent = "URL tak sah. Format: https://xxx.firebasedatabase.app";
+    errBox.style.display = "block"; return;
+  }
+
+  $("saveUrlBtn").disabled = true;
+  $("saveUrlBtn").textContent = "Menyemak...";
+  const ok = await testConnection(url);
+  $("saveUrlBtn").disabled = false;
+  $("saveUrlBtn").textContent = "Simpan";
+
+  if (!ok) {
+    errBox.textContent = "Gagal sambung. Pastikan URL betul & rules dibenarkan.";
+    errBox.style.display = "block"; return;
+  }
+
+  FB_URL = url;
+  localStorage.setItem('fbUrl', url);
+  okBox.textContent = "✓ Berjaya disambung!";
+  okBox.style.display = "block";
+  showToast("✓ Firebase disambung", "success");
+  setTimeout(() => route(), 700);
+});
+
+$("clearUrlBtn").addEventListener("click", () => {
+  if (!confirm("Padam URL Firebase dan log keluar?")) return;
+  localStorage.removeItem('fbUrl');
+  localStorage.removeItem('session');
+  FB_URL = ''; currentUser = null;
+  $("firebaseUrl").value = "";
+  route();
+});
+
+$("settingsBtn").addEventListener("click", () => {
+  if (!FB_URL) return;
+  if (currentUser && !confirm("Ubah URL Firebase? Anda akan log keluar.")) return;
+  localStorage.removeItem('session');
+  currentUser = null;
+  $("firebaseUrl").value = FB_URL;
+  showScreen("setup");
+});
+
+$("goRegister").addEventListener("click", () => showScreen("register"));
+$("goLogin").addEventListener("click", () => showScreen("login"));
+
+$("registerBtn").addEventListener("click", async () => {
+  const errBox = $("registerError");
+  errBox.style.display = "none";
+  const name = $("regName").value.trim();
+  const email = $("regEmail").value.trim().toLowerCase();
+  const password = $("regPassword").value;
+  const confirm = $("regConfirm").value;
+
+  if (!name) { errBox.textContent = "Sila isi nama"; errBox.style.display="block"; return; }
+  if (!email.includes("@")) { errBox.textContent = "Email tak sah"; errBox.style.display="block"; return; }
+  if (password.length < 6) { errBox.textContent = "Password min 6 aksara"; errBox.style.display="block"; return; }
+  if (password !== confirm) { errBox.textContent = "Password tak sama"; errBox.style.display="block"; return; }
+
+  $("registerBtn").disabled = true;
+  $("registerBtn").textContent = "Mendaftar...";
+  try {
+    const users = await fbGet('users') || {};
+    const exists = Object.values(users).find(u => u.email === email);
+    if (exists) {
+      errBox.textContent = "Email sudah didaftarkan. Sila log masuk.";
+      errBox.style.display = "block"; return;
+    }
+    const uid = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    const passwordHash = await hashPassword(password);
+    const isFirstUser = Object.keys(users).length === 0;
+    const role = isFirstUser ? 'admin' : 'staff';
+    await fbPut(`users/${uid}`, {
+      uid, name, email, passwordHash, role,
+      createdAt: new Date().toISOString()
+    });
+    localStorage.setItem('session', JSON.stringify({ uid, name, email, role }));
+    currentUser = { uid, name, email, role };
+    showToast(isFirstUser ? "✓ Didaftar sebagai ADMIN!" : "✓ Berjaya didaftar!", "success");
+    route();
+  } catch (e) {
+    errBox.textContent = "Ralat: " + e.message;
+    errBox.style.display = "block";
+  } finally {
+    $("registerBtn").disabled = false;
+    $("registerBtn").textContent = "Daftar";
+  }
+});
+
+$("loginBtn").addEventListener("click", async () => {
+  const errBox = $("loginError");
+  errBox.style.display = "none";
+  const email = $("loginEmail").value.trim().toLowerCase();
+  const password = $("loginPassword").value;
+
+  if (!email || !password) {
+    errBox.textContent = "Sila isi email dan password";
+    errBox.style.display = "block"; return;
+  }
+  $("loginBtn").disabled = true;
+  $("loginBtn").textContent = "Log masuk...";
+  try {
+    const users = await fbGet('users') || {};
+    const user = Object.values(users).find(u => u.email === email);
+    if (!user) {
+      errBox.textContent = "Akaun tak dijumpai. Sila daftar dahulu.";
+      errBox.style.display = "block"; return;
+    }
+    const hash = await hashPassword(password);
+    if (hash !== user.passwordHash) {
+      errBox.textContent = "Password salah";
+      errBox.style.display = "block"; return;
+    }
+    localStorage.setItem('session', JSON.stringify({
+      uid: user.uid, name: user.name, email: user.email, role: user.role || 'staff'
+    }));
+    currentUser = { uid: user.uid, name: user.name, email: user.email, role: user.role || 'staff' };
+    showToast("✓ Berjaya log masuk", "success");
+    route();
+  } catch (e) {
+    errBox.textContent = "Ralat: " + e.message;
+    errBox.style.display = "block";
+  } finally {
+    $("loginBtn").disabled = false;
+    $("loginBtn").textContent = "Log Masuk";
+  }
+});
+
+$("logoutBtn").addEventListener("click", () => {
+  localStorage.removeItem('session');
+  currentUser = null;
+  $("loginEmail").value = ""; $("loginPassword").value = "";
+  route();
+});
+
+$("loginPassword").addEventListener("keypress", e => { if (e.key === "Enter") $("loginBtn").click(); });
+$("regConfirm").addEventListener("keypress", e => { if (e.key === "Enter") $("registerBtn").click(); });
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+    tab.classList.add('active');
+    $('tab-' + tab.dataset.tab).classList.remove('hidden');
+    if (tab.dataset.tab === 'admin') loadAdminDashboard();
+  });
+});
+
+document.querySelectorAll('.sub-tab').forEach(st => {
+  st.addEventListener('click', () => {
+    document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sub-content').forEach(c => c.classList.add('hidden'));
+    st.classList.add('active');
+    $('subtab-' + st.dataset.subtab).classList.remove('hidden');
+    if (st.dataset.subtab === 'dash') loadAdminDashboard();
+    if (st.dataset.subtab === 'attendance') loadAllAttendance();
+    if (st.dataset.subtab === 'leaves') loadAdminLeaves();
+    if (st.dataset.subtab === 'staff') loadStaffList();
+  });
+});
+
+setInterval(() => {
+  const now = new Date();
+  $("liveTime").textContent = now.toLocaleTimeString('ms-MY');
+  $("liveDate").textContent = now.toLocaleDateString('ms-MY', {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+}, 1000);
+
+async function enterDashboard() {
+  // SYNC ROLE DARI FIREBASE
+  try {
+    const users = await fbGet('users') || {};
+    const dbUser = Object.values(users).find(u => u.email === currentUser.email);
+    if (dbUser) {
+      currentUser.role = dbUser.role || 'staff';
+      currentUser.name = dbUser.name || currentUser.name;
+      currentUser.uid = dbUser.uid;
+      localStorage.setItem('session', JSON.stringify(currentUser));
+    }
+
+    // AUTO-PROMOTE: kalau tak ada admin, promote user paling awal
+    const allUsers = Object.values(users);
+    const adminExists = allUsers.some(u => u.role === 'admin');
+    if (!adminExists && allUsers.length > 0) {
+      const oldest = allUsers.sort((a,b) =>
+        (a.createdAt||"").localeCompare(b.createdAt||"")
+      )[0];
+      if (oldest.email === currentUser.email) {
+        await fbPatch(`users/${oldest.uid}`, { role: 'admin' });
+        currentUser.role = 'admin';
+        localStorage.setItem('session', JSON.stringify(currentUser));
+        showToast("👑 Anda dipromosikan jadi Admin!", "success");
+      }
+    }
+  } catch (e) {
+    console.warn("Sync role gagal:", e);
+  }
+
+  // Nama pendek (kata pertama sahaja)
+  const shortName = (currentUser.name || 'User').trim().split(/\s+/)[0];
+  $("userName").textContent = shortName;
+  $("userEmail").textContent = currentUser.email;
+
+  const roleBadge = $("userRoleBadge");
+  if (currentUser.role === 'admin') {
+    $("userAvatar").classList.add("admin");
+    $("adminTab").classList.remove("hidden");
+    roleBadge.textContent = "Admin";
+    roleBadge.className = "role-badge admin";
+  } else {
+    $("userAvatar").classList.remove("admin");
+    $("adminTab").classList.add("hidden");
+    roleBadge.textContent = "Staff";
+    roleBadge.className = "role-badge staff";
+  }
+
+  await checkTodayAttendance();
+  await loadHistory();
+  await loadLeaves();
+}
+
+async function checkTodayAttendance() {
+  const today = todayKey();
+  const now = new Date();
+  const schedule = getSchedule(now.getDay());
+  const statusBox = $("statusBox");
+  const clockInBtn = $("clockInBtn");
+  const clockOutBtn = $("clockOutBtn");
+
+  if (!schedule) {
+    statusBox.className = "status-box warning";
+    statusBox.textContent = "🏖️ Hari ini cuti (Ahad). Selamat berehat!";
+    clockInBtn.disabled = true; clockOutBtn.disabled = true;
+    return;
+  }
+
+  try {
+    const rec = await fbGet(`attendance/${currentUser.uid}/${today}`);
+    if (!rec) {
+      statusBox.className = "status-box info";
+      statusBox.textContent = `Sedia untuk Clock In (Jadual: ${schedule.start} - ${schedule.end})`;
+      clockInBtn.disabled = false; clockOutBtn.disabled = true;
+      clockInBtn.onclick = doClockIn; clockOutBtn.onclick = null;
+      return;
+    }
+    if (rec.clockIn && !rec.clockOut) {
+      clockInBtn.disabled = true; clockOutBtn.disabled = false;
+      clockOutBtn.onclick = doClockOut; clockInBtn.onclick = null;
+      if (rec.isLate) {
+        statusBox.className = "status-box danger";
+        statusBox.innerHTML = `🔴 Clock In: <strong>${rec.clockIn}</strong> — <strong>LEWAT</strong> (sepatutnya ${schedule.start})`;
+      } else {
+        statusBox.className = "status-box success";
+        statusBox.innerHTML = `🟢 Clock In: <strong>${rec.clockIn}</strong> — Tepat masa`;
+      }
+    } else if (rec.clockIn && rec.clockOut) {
+      clockInBtn.disabled = true; clockOutBtn.disabled = true;
+      clockInBtn.onclick = null; clockOutBtn.onclick = null;
+      if (rec.isLate) {
+        statusBox.className = "status-box danger";
+        statusBox.innerHTML = `🔴 Selesai. Clock In <strong>${rec.clockIn}</strong> (LEWAT), Clock Out <strong>${rec.clockOut}</strong>`;
+      } else {
+        statusBox.className = "status-box success";
+        statusBox.innerHTML = `✓ Selesai. Clock In <strong>${rec.clockIn}</strong>, Clock Out <strong>${rec.clockOut}</strong>`;
+      }
+    }
+  } catch (e) {
+    statusBox.className = "status-box danger";
+    statusBox.textContent = "Ralat sambungan: " + e.message;
+  }
+}
+
+function getLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error("Browser tak support GPS"));
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => reject(new Error("Benarkan akses lokasi untuk clock in")),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  });
+}
+
+async function doClockIn() {
+  $("clockInBtn").disabled = true;
+  try {
+    let loc = null;
+    try {
+      loc = await getLocation();
+      const dist = distanceMeters(loc.lat, loc.lng, OFFICE_LOCATION.lat, OFFICE_LOCATION.lng);
+      if (dist > OFFICE_LOCATION.radiusMeters) {
+        showToast(`❌ Anda ${Math.round(dist)}m dari pejabat. Perlu dalam ${OFFICE_LOCATION.radiusMeters}m.`, "error");
+        $("clockInBtn").disabled = false; return;
+      }
+      showToast(`📍 Lokasi disahkan (${Math.round(dist)}m)`, "success");
+    } catch (e) {
+      showToast("❌ " + e.message, "error");
+      $("clockInBtn").disabled = false; return;
+    }
+
+    const now = new Date();
+    const today = todayKey();
+    const schedule = getSchedule(now.getDay());
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const isLate = nowMin > timeToMinutes(schedule.start);
+
+    await fbPut(`attendance/${currentUser.uid}/${today}`, {
+      uid: currentUser.uid, name: currentUser.name, email: currentUser.email,
+      date: today, clockIn: fmtTime(now), clockOut: null, isLate,
+      scheduleStart: schedule.start, scheduleEnd: schedule.end,
+      location: loc, createdAt: new Date().toISOString()
+    });
+
+    showToast(isLate ? "⚠️ Clock In (LEWAT)" : "✓ Clock In berjaya!", isLate ? "error" : "success");
+    await checkTodayAttendance();
+    await loadHistory();
+  } catch (e) {
+    showToast("Ralat: " + e.message, "error");
+    $("clockInBtn").disabled = false;
+  }
+}
+
+async function doClockOut() {
+  $("clockOutBtn").disabled = true;
+  try {
+    const now = new Date();
+    const today = todayKey();
+    await fbPatch(`attendance/${currentUser.uid}/${today}`, {
+      clockOut: fmtTime(now),
+      clockOutAt: new Date().toISOString()
+    });
+    showToast("✓ Clock Out berjaya!", "success");
+    await checkTodayAttendance();
+    await loadHistory();
+  } catch (e) {
+    showToast("Ralat: " + e.message, "error");
+    $("clockOutBtn").disabled = false;
+  }
+}
+
+async function loadHistory() {
+  const listEl = $("historyList");
+  try {
+    const data = await fbGet(`attendance/${currentUser.uid}`) || {};
+    const items = Object.values(data).sort((a,b) => (b.date||"").localeCompare(a.date||""));
+    if (items.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">Belum ada rekod kehadiran</div>';
+      return;
+    }
+    listEl.innerHTML = items.slice(0, 30).map(it => {
+      const badge = it.isLate
+        ? '<span class="badge late">LEWAT</span>'
+        : '<span class="badge on-time">TEPAT</span>';
+      return `
+        <div class="history-item ${it.isLate ? 'late' : ''}">
+          <div>
+            <div class="date-info">${it.date}</div>
+            <div class="time-info">In: ${it.clockIn||'-'} • Out: ${it.clockOut||'-'}</div>
+          </div>
+          ${badge}
+        </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div class="empty-state">Ralat: ' + e.message + '</div>';
+  }
+}
+
+$("applyLeaveBtn").addEventListener("click", async () => {
+  const type = $("leaveType").value;
+  const start = $("leaveStart").value;
+  const end = $("leaveEnd").value;
+  const reason = $("leaveReason").value.trim();
+
+  if (!start || !end) { showToast("Pilih tarikh mula & tamat", "error"); return; }
+  if (end < start) { showToast("Tarikh tamat sebelum mula", "error"); return; }
+
+  $("applyLeaveBtn").disabled = true;
+  try {
+    await fbPost(`leaves/${currentUser.uid}`, {
+      uid: currentUser.uid, name: currentUser.name, email: currentUser.email,
+      type, start, end, reason, status: "pending",
+      createdAt: new Date().toISOString()
+    });
+    showToast("✓ Permohonan dihantar", "success");
+    $("leaveStart").value = ""; $("leaveEnd").value = ""; $("leaveReason").value = "";
+    await loadLeaves();
+  } catch (e) {
+    showToast("Ralat: " + e.message, "error");
+  } finally {
+    $("applyLeaveBtn").disabled = false;
+  }
+});
+
+async function loadLeaves() {
+  const listEl = $("leaveList");
+  try {
+    const data = await fbGet(`leaves/${currentUser.uid}`) || {};
+    const items = Object.values(data).sort((a,b) => (b.start||"").localeCompare(a.start||""));
+    if (items.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">Belum ada permohonan</div>';
+      return;
+    }
+    const typeLabel = { annual: "Cuti Tahunan", sick: "Cuti Sakit", emergency: "Kecemasan" };
+    listEl.innerHTML = items.map(it => {
+      const cls = it.type === 'sick' ? 'sick' : 'leave';
+      const statusCls = it.status === 'approved' ? 'approved' : (it.status === 'rejected' ? 'rejected' : 'pending');
+      return `
+        <div class="history-item" style="border-left-color: ${it.type === 'sick' ? '#3b82f6' : '#f59e0b'}">
+          <div>
+            <div class="date-info">${typeLabel[it.type] || it.type}</div>
+            <div class="time-info">${it.start} → ${it.end}${it.reason ? ' • ' + it.reason : ''}</div>
+          </div>
+          <span class="badge ${statusCls}">${it.status.toUpperCase()}</span>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div class="empty-state">Ralat: ' + e.message + '</div>';
+  }
+}
+
+// ============================================================
+// ADMIN
+// ============================================================
+
+async function loadAdminDashboard() {
+  const today = todayKey();
+  try {
+    const users = await fbGet('users') || {};
+    const allAttendance = await fbGet('attendance') || {};
+
+    const staffList = Object.values(users);
+    const totalStaff = staffList.length;
+
+    let checkedIn = 0, late = 0;
+    const todayRecords = [];
+
+    for (const [uid, recs] of Object.entries(allAttendance)) {
+      if (recs && recs[today]) {
+        const rec = recs[today];
+        const user = users[uid];
+        if (user) {
+          todayRecords.push({ ...rec, userName: user.name });
+          checkedIn++;
+          if (rec.isLate) late++;
+        }
+      }
+    }
+
+    $("statTotalStaff").textContent = totalStaff;
+    $("statCheckedIn").textContent = checkedIn;
+    $("statLate").textContent = late;
+    $("statNotIn").textContent = Math.max(0, totalStaff - checkedIn);
+
+    const listEl = $("todayList");
+    if (todayRecords.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">Belum ada staff clock in hari ini</div>';
+    } else {
+      todayRecords.sort((a,b) => (a.clockIn||"").localeCompare(b.clockIn||""));
+      listEl.innerHTML = todayRecords.map(it => `
+        <div class="history-item ${it.isLate ? 'late' : ''}">
+          <div>
+            <div class="date-info">${it.userName || it.name || it.email}</div>
+            <div class="time-info">In: ${it.clockIn||'-'} • Out: ${it.clockOut||'-'}</div>
+          </div>
+          <span class="badge ${it.isLate ? 'late' : 'on-time'}">${it.isLate ? 'LEWAT' : 'TEPAT'}</span>
+        </div>
+      `).join('');
+    }
+  } catch (e) {
+    showToast("Ralat: " + e.message, "error");
+  }
+}
+
+async function loadAllAttendance(filterDate = null) {
+  const tbody = $("attendanceTable");
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-light);">Memuatkan...</td></tr>';
+
+  try {
+    const users = await fbGet('users') || {};
+    const allAttendance = await fbGet('attendance') || {};
+
+    const rows = [];
+    for (const [uid, recs] of Object.entries(allAttendance)) {
+      if (!recs) continue;
+      const user = users[uid];
+      if (!user) continue;
+      for (const [date, rec] of Object.entries(recs)) {
+        if (filterDate && date !== filterDate) continue;
+        rows.push({ ...rec, userName: user.name, date });
+      }
+    }
+
+    rows.sort((a,b) => (b.date||"").localeCompare(a.date||"") || (a.userName||"").localeCompare(b.userName||""));
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-light);">Tiada rekod</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.slice(0, 200).map(r => `
+      <tr>
+        <td>${r.date}</td>
+        <td>${r.userName || r.name || '-'}</td>
+        <td>${r.clockIn || '-'}</td>
+        <td>${r.clockOut || '-'}</td>
+        <td><span class="badge ${r.isLate ? 'late' : 'on-time'}">${r.isLate ? 'LEWAT' : 'TEPAT'}</span></td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#fca5a5;">Ralat: ${e.message}</td></tr>`;
+  }
+}
+
+$("filterBtn").addEventListener("click", () => {
+  const d = $("filterDate").value;
+  if (!d) { showToast("Pilih tarikh dulu", "error"); return; }
+  loadAllAttendance(d);
+});
+$("clearFilterBtn").addEventListener("click", () => {
+  $("filterDate").value = "";
+  loadAllAttendance();
+});
+$("refreshDashBtn").addEventListener("click", loadAdminDashboard);
+
+$("exportCsvBtn").addEventListener("click", async () => {
+  try {
+    const users = await fbGet('users') || {};
+    const allAttendance = await fbGet('attendance') || {};
+
+    const rows = [["Tarikh","Nama","Email","Clock In","Clock Out","Status"]];
+    for (const [uid, recs] of Object.entries(allAttendance)) {
+      if (!recs) continue;
+      const user = users[uid];
+      if (!user) continue;
+      for (const [date, rec] of Object.entries(recs)) {
+        rows.push([
+          date,
+          user.name || '',
+          user.email || '',
+          rec.clockIn || '',
+          rec.clockOut || '',
+          rec.isLate ? 'LEWAT' : 'TEPAT'
+        ]);
+      }
+    }
+    rows.sort((a,b) => (b[0]||"").localeCompare(a[0]||""));
+
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kehadiran_${todayKey()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("✓ CSV didownload", "success");
+  } catch (e) {
+    showToast("Ralat: " + e.message, "error");
+  }
+});
+
+async function loadAdminLeaves() {
+  const listEl = $("adminLeaveList");
+  try {
+    const users = await fbGet('users') || {};
+    const allLeaves = await fbGet('leaves') || {};
+
+    const items = [];
+    for (const [uid, leaves] of Object.entries(allLeaves)) {
+      if (!leaves) continue;
+      const user = users[uid];
+      for (const [id, lv] of Object.entries(leaves)) {
+        items.push({ ...lv, _uid: uid, _id: id, userName: user ? user.name : lv.name });
+      }
+    }
+    items.sort((a,b) => {
+      const order = { pending: 0, approved: 1, rejected: 2 };
+      return (order[a.status]??3) - (order[b.status]??3) || (b.createdAt||"").localeCompare(a.createdAt||"");
+    });
+
+    if (items.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">Tiada permohonan cuti</div>';
+      return;
+    }
+
+    const typeLabel = { annual: "Cuti Tahunan", sick: "🩺 Cuti Sakit", emergency: "🚨 Kecemasan" };
+    listEl.innerHTML = items.map(it => {
+      const statusCls = it.status === 'approved' ? 'approved' : (it.status === 'rejected' ? 'rejected' : 'pending');
+      const actions = it.status === 'pending' ? `
+        <div style="display:flex; gap:6px;">
+          <button class="btn-small btn-approve" onclick="approveLeave('${it._uid}','${it._id}','approved')">✓</button>
+          <button class="btn-small btn-reject" onclick="rejectLeave('${it._uid}','${it._id}')">✖</button>
+        </div>
+      ` : '';
+      return `
+        <div class="history-item" style="border-left-color: ${it.type === 'sick' ? '#3b82f6' : '#f59e0b'}; align-items:flex-start;">
+          <div style="flex:1;">
+            <div class="date-info">${it.userName || it.email} — ${typeLabel[it.type] || it.type}</div>
+            <div class="time-info">${it.start} → ${it.end}</div>
+            ${it.reason ? `<div class="time-info" style="color:var(--text); margin-top:4px;">"${it.reason}"</div>` : ''}
+            <span class="badge ${statusCls}" style="margin-top:6px; display:inline-block;">${it.status.toUpperCase()}</span>
+          </div>
+          ${actions}
+        </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div class="empty-state">Ralat: ' + e.message + '</div>';
+  }
+}
+
+window.approveLeave = async (uid, id, status) => {
+  try {
+    await fbPatch(`leaves/${uid}/${id}`, { status, reviewedAt: new Date().toISOString() });
+    showToast("✓ Cuti diluluskan", "success");
+    loadAdminLeaves();
+  } catch (e) {
+    showToast("Ralat: " + e.message, "error");
+  }
+};
+window.rejectLeave = async (uid, id) => {
+  if (!confirm("Tolak permohonan cuti ini?")) return;
+  try {
+    await fbPatch(`leaves/${uid}/${id}`, { status: 'rejected', reviewedAt: new Date().toISOString() });
+    showToast("✖ Cuti ditolak", "info");
+    loadAdminLeaves();
+  } catch (e) {
+    showToast("Ralat: " + e.message, "error");
+  }
+};
+
+async function loadStaffList() {
+  const listEl = $("staffList");
+  try {
+    const users = await fbGet('users') || {};
+    const allAttendance = await fbGet('attendance') || {};
+
+    let items = Object.values(users).map(u => {
+      const recs = allAttendance[u.uid] || {};
+      const totalDays = Object.keys(recs).length;
+      return { ...u, totalDays };
+    });
+
+    items.sort((a,b) => {
+      if ((a.role === 'admin') !== (b.role === 'admin')) {
+        return a.role === 'admin' ? -1 : 1;
+      }
+      return (a.name||"").localeCompare(b.name||"");
+    });
+
+    if (items.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">Tiada staff</div>';
+      return;
+    }
+
+    const totalAdmin = items.filter(u => u.role === 'admin').length;
+    const totalStaff = items.length - totalAdmin;
+
+    listEl.innerHTML = `
+      <div style="background:var(--card-2); padding:12px 16px; border-radius:10px; margin-bottom:12px; font-size:13px; color:var(--text-light); border:1px solid var(--border);">
+        👥 <strong style="color:var(--text);">${items.length}</strong> pengguna
+        • 👑 <strong style="color:#fbbf24;">${totalAdmin}</strong> admin
+        • 👤 <strong style="color:#a5b4fc;">${totalStaff}</strong> staff
+      </div>
+    ` + items.map(u => `
+      <div class="history-item" style="border-left-color: ${u.role === 'admin' ? '#f59e0b' : '#6366f1'};">
+        <div style="display:flex; align-items:center; gap:12px; flex:1;">
+          <div style="width:40px; height:40px; border-radius:50%; background:${u.role === 'admin' ? 'linear-gradient(135deg,#f59e0b,#f97316)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)'}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; flex-shrink:0;">
+            ${(u.name||'U').charAt(0).toUpperCase()}
+          </div>
+          <div style="min-width:0; flex:1;">
+            <div class="date-info" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.name || '(tiada nama)'}</div>
+            <div class="time-info" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.email}</div>
+            <div class="time-info">📊 ${u.totalDays} hari rekod</div>
+          </div>
+        </div>
+        <span class="badge ${u.role === 'admin' ? 'admin' : 'on-time'}">${u.role === 'admin' ? '👑 ADMIN' : '👤 STAFF'}</span>
+      </div>
+    `).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div class="empty-state">Ralat: ' + e.message + '</div>';
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  $("firebaseUrl").value = FB_URL;
+  route();
+});
+</script>
+
+</body>
+</html>
